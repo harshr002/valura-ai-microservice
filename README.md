@@ -4,127 +4,129 @@
 
 This repository implements the core spine of Valura’s AI microservice.
 
-The goal is to demonstrate how a safety-first, streaming AI architecture can:
+The system is designed as a safety-first, streaming AI architecture that helps novice investors:
 
-- protect users from harmful financial actions
-- classify financial intent in one structured LLM call
-- route requests to specialist agents
-- stream novice-friendly outputs in real time
+- Build
+- Monitor
+- Grow
+- Protect
 
-This build implements:
+This submission implements:
 
 - Deterministic Safety Guard
 - Single-call Intent Classifier
 - Portfolio Health Check Agent
-- FastAPI + SSE streaming layer
-- Session memory (in-memory for demo)
-- Fully mocked LLM in tests (CI-safe)
+- FastAPI + Server-Sent Events (SSE)
+- In-memory session memory
+- CI-safe mocked LLM testing
 
 ---
 
-## Architecture
+# Architecture
 
-### Request Flow
-
-Every request follows this pipeline:
+## Request Flow
 
 ```text
-User Request
+Client Request
      ↓
-Safety Guard (deterministic, local)
+Safety Guard
      ↓
-Intent Classifier (single structured LLM call)
+Intent Classifier
      ↓
 Agent Router
      ↓
 Portfolio Health Agent / Stub Agent
      ↓
-SSE Stream Response
+SSE Streaming Response
 ```
 
-The design goal was extensibility without rewrites.
+Design goal:
+
+Build a spine that can scale to multiple agents without rewrites.
 
 ---
 
-## Why These Libraries
+# Library Choices
 
-### FastAPI
+## FastAPI
 
-Used because:
+Chosen because:
 
-- async-first
-- lightweight
-- production-ready
-- excellent ecosystem for microservices
+- Async-first
+- Lightweight
+- Production-ready
+- Excellent for microservices
 
-### sse-starlette
+## sse-starlette
 
-Used because:
+Chosen because:
 
-- simple SSE support
-- integrates cleanly with FastAPI
-- low overhead
+- Native SSE support
+- Clean FastAPI integration
+- Minimal overhead
 
-### Pydantic
+## Pydantic
 
-Used because:
+Chosen because:
 
-- schema enforcement
-- structured outputs
-- safer routing boundaries
+- Strong schema validation
+- Structured LLM outputs
+- Safer routing boundaries
 
-### Pytest
+## Pytest
 
-Used because:
+Chosen because:
 
-- CI compatibility
-- fast test iteration
-- simple mocking support
+- CI-friendly
+- Fast feedback loop
+- Easy mocking
 
 ---
 
 # Component 1 — Safety Guard
 
-The safety guard is:
+The Safety Guard is:
 
-- deterministic
-- local-only
-- no network
-- no LLM
-- designed for sub-10ms execution
+- Fully deterministic
+- Local-only
+- No network calls
+- No LLM calls
+- Designed for sub-10ms execution
 
 Blocked categories:
 
-- insider trading
-- market manipulation
-- money laundering
-- guaranteed-return claims
-- reckless leverage
+- Insider trading
+- Market manipulation
+- Money laundering
+- Guaranteed-return claims
+- Reckless leverage
 
 Educational queries are allowed.
 
-### Tradeoff
+## Safety Precedence
 
-The safety layer intentionally prioritizes user protection over perfect recall.
+Safety always runs before classification.
 
-In ambiguous cases, over-blocking is preferred over unsafe guidance.
+If the safety layer blocks a request:
 
-This reflects financial-system safety priorities.
+- The classifier is never called
+- The request is terminated safely
+
+The classifier safety verdict is informational only.
+
+Only the safety guard has blocking authority.
+
+## Tradeoff
+
+In ambiguous cases, this implementation intentionally prefers over-blocking over unsafe financial guidance.
 
 ---
 
 # Component 2 — Intent Classifier
 
-The classifier performs exactly **one LLM call**.
+The classifier performs exactly one LLM call.
 
-Structured output contains:
-
-- intent
-- agent
-- entities
-- informational safety verdict
-
-Example:
+Output schema:
 
 ```json
 {
@@ -137,52 +139,55 @@ Example:
 }
 ```
 
-### Failure Handling
+The classifier returns:
 
-If the classifier fails:
+- Intent
+- Extracted entities
+- Target agent
+- Informational safety verdict
 
-- request does not crash
-- fallback agent = `support`
+## Failure Handling
 
-### Conversation Handling
+If the LLM fails:
 
-Session memory allows follow-up resolution:
+- The pipeline does not crash
+- Fallback agent = `support`
 
-Example:
+## Follow-up Handling
+
+Conversation memory allows:
 
 ```text
 User: Tell me about Microsoft
 User: What about Apple?
 ```
 
-The classifier uses prior turns to resolve follow-up references.
+The classifier resolves entity carry-over across turns.
 
 ---
 
 # Component 3 — Portfolio Health Agent
 
-The Portfolio Health agent handles:
+This agent handles:
 
-- concentration risk
-- performance metrics
-- benchmark comparison
-- novice-friendly observations
+- Concentration risk
+- Performance metrics
+- Benchmark comparison
+- Actionable novice-friendly observations
 
-Portfolio is passed into the pipeline:
+The agent receives portfolio data as input.
 
-The agent does **not fetch portfolio data itself.**
+It does not fetch portfolio data itself.
 
-### Empty Portfolio Handling
+## Empty Portfolio Handling
 
-For users with no holdings:
+If a user has no holdings:
 
-The agent does not error.
+The system returns BUILD-oriented guidance instead of errors.
 
-Instead, it returns BUILD-oriented guidance.
+## Benchmarks
 
-### Benchmarks
-
-Benchmarks are selected by market:
+Benchmark is selected by market:
 
 | Market | Benchmark |
 |--------|------------|
@@ -191,23 +196,45 @@ Benchmarks are selected by market:
 | EU | STOXX Europe 600 |
 | Global | MSCI World |
 
+Every response includes a regulatory disclaimer.
+
+---
+
+# Stub Agent Contract
+
+Only Portfolio Health is fully implemented.
+
+Other agents:
+
+- market_research
+- investment_strategy
+- financial_calculator
+- support
+
+Return structured stub responses containing:
+
+- Intent
+- Extracted entities
+- Agent name
+- Not-implemented message
+
+The router never crashes when routing to an unimplemented agent.
+
 ---
 
 # Session Memory
 
-Persistence choice:
-
-## In-Memory Session Store
+## In-Memory Store
 
 Chosen because:
 
-- simplest demo implementation
-- zero external infrastructure
-- sufficient for assignment scope
+- No infrastructure dependencies
+- Fastest demo implementation
+- Easy testing
 
 Tradeoff:
 
-Memory resets on restart.
+Memory resets when the service restarts.
 
 With more time:
 
@@ -225,19 +252,19 @@ Responses are streamed using SSE.
 
 Event types:
 
-### Metadata
+## Metadata
 
 ```text
 event: metadata
 ```
 
-### Message
+## Message
 
 ```text
 event: message
 ```
 
-### Completion
+## Completion
 
 ```text
 event: done
@@ -247,7 +274,7 @@ event: done
 
 # Timeout and Error Handling
 
-The entire pipeline is wrapped in:
+The full request pipeline is wrapped in:
 
 ```python
 asyncio.wait_for(...)
@@ -261,22 +288,100 @@ Timeout:
 
 Why 15 seconds?
 
-Because:
+- Prevents hanging requests
+- Protects server resources
+- Well below assignment limits
 
-- protects system resources
-- prevents hanging client connections
-- well below assignment targets
-
-Timeouts return structured SSE errors:
+Timeouts return:
 
 ```text
 event: error
 data: {"reason": "request_timeout"}
 ```
 
-Internal errors also return structured SSE responses.
+Internal exceptions also return structured SSE error events.
 
 No stack traces are exposed.
+
+---
+
+# Testing Strategy
+
+All tests run under:
+
+```bash
+pytest tests/ -v
+```
+
+LLM is fully mocked.
+
+CI does not require:
+
+```text
+OPENAI_API_KEY
+```
+
+---
+
+# Testing Contract
+
+## Routing Match
+
+Agent names must match exactly.
+
+Example:
+
+```text
+portfolio_health == portfolio_health
+```
+
+## Entity Matching
+
+Uses subset matching.
+
+Extra entities are allowed.
+
+## Ticker Normalization
+
+Normalization rules:
+
+```text
+AAPL == aapl
+ASML == ASML.AS
+```
+
+## Numeric Matching
+
+Tolerance:
+
+```text
+±5%
+```
+
+Applied to:
+
+- amount
+- rate
+- period_years
+
+---
+
+# Evaluation Results
+
+Measured using:
+
+```bash
+pytest tests/ -v -s
+```
+
+Current results:
+
+```text
+Classifier routing accuracy: 100.0%
+Safety harmful recall: 100.0%
+Educational pass-through: 100.0%
+Empty portfolio handling: PASS
+```
 
 ---
 
@@ -284,13 +389,11 @@ No stack traces are exposed.
 
 ## Development Model
 
-OpenAI lightweight chat model (`gpt-4o-mini` equivalent)
+gpt-4o-mini
 
-## Evaluation Assumption
+## Evaluation Model
 
-GPT-4-class production model
-
----
+gpt-4.1
 
 ## Measurement Method
 
@@ -300,48 +403,31 @@ Measured using:
 python scripts/benchmark.py
 ```
 
-The benchmark sends 20 SSE requests and measures:
+Benchmark sends 20 SSE requests.
 
-- request → first token
-- request → completion
+Measures:
 
-### Measured Results
+- Request → first token
+- Request → completion
 
-Paste your actual benchmark output here:
+## Results
+
+Paste your measured output:
 
 ```text
 p95 first-token latency: 0.xxxs
 p95 end-to-end latency: x.xxxs
 ```
 
----
+## Cost Control Strategy
 
-## Cost Strategy
+Cost is minimized through:
 
-Cost is controlled through:
+- Safety guard before LLM
+- Exactly one classifier call
+- No agent-side LLM calls
 
-- safety guard before LLM
-- exactly one classifier call
-- no agent-side LLM calls
-
-Projected query cost remains under assignment target.
-
----
-
-# Fixtures
-
-The system is designed to work with:
-
-- user profiles
-- conversation transcripts
-- safety datasets
-- intent classification datasets
-
-Portfolio and user data are passed through request payloads.
-
-No user portfolio is hardcoded.
-
-No market prices are hardcoded.
+Estimated query cost stays under assignment target.
 
 ---
 
@@ -360,26 +446,26 @@ OPENAI_API_KEY=your_api_key_here
 REQUEST_TIMEOUT_SECONDS=15
 ```
 
-Tests do not require this.
+`.env` is gitignored.
 
 ---
 
 # Setup
 
-Create environment:
+## Create environment
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 ```
 
-Install:
+## Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run:
+## Run service
 
 ```bash
 uvicorn src.api.app:app --reload
@@ -387,82 +473,29 @@ uvicorn src.api.app:app --reload
 
 ---
 
-# Testing
-# Test Matcher Rules
-
-## Routing Match
-
-The classifier output agent must exactly match:
-
-expected_agent
-
-Example:
-
-portfolio_health == portfolio_health
-
----
-
-## Entity Match
-
-Entity matching uses subset logic.
-
-Expected entities must exist in actual output.
-
-Extra extracted entities are allowed.
-
----
-
-## Ticker Normalization
-
-Tickers are normalized:
-
-AAPL == aapl  
-ASML == ASML.AS
-
-Normalization rule:
-
-- uppercase
-- ignore exchange suffix
-
----
-
-## Numeric Match
-
-Numeric fields:
-
-- amount
-- rate
-- period_years
-
-Tolerance:
-
-±5%
-
----
-
 # Future Improvements
 
-With one more week I would add:
+With another week I would add:
 
-- live market data via yfinance
-- embedding-based pre-classifier
-- model caching
-- multi-tenant rate limiting
-- persistent storage
+- Live market data integration via yfinance
+- Embedding-based pre-classifier
+- Query dedupe cache
+- Tenant-based model selection
+- Rate limiting
+- Persistent storage
 
 ---
 
 # Defence Video
 
-Loom / YouTube (Unlisted):
+Paste your Loom / YouTube link here:
 
-PASTE VIDEO LINK HERE
-
+VIDEO_LINK_HERE
 
 ---
 
 # Repository
 
-GitHub Repository:
+Paste your GitHub repository link here:
 
-PASTE GITHUB LINK HERE
+REPO_LINK_HERE
