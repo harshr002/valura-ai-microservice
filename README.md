@@ -388,18 +388,55 @@ uvicorn src.api.app:app --reload
 ---
 
 # Testing
+# Test Matcher Rules
 
-Run:
+## Routing Match
 
-```bash
-pytest tests/ -v
-```
+The classifier output agent must exactly match:
 
-Tests:
+expected_agent
 
-- do not require `OPENAI_API_KEY`
-- use mocked LLM client
-- run in CI safely
+Example:
+
+portfolio_health == portfolio_health
+
+---
+
+## Entity Match
+
+Entity matching uses subset logic.
+
+Expected entities must exist in actual output.
+
+Extra extracted entities are allowed.
+
+---
+
+## Ticker Normalization
+
+Tickers are normalized:
+
+AAPL == aapl  
+ASML == ASML.AS
+
+Normalization rule:
+
+- uppercase
+- ignore exchange suffix
+
+---
+
+## Numeric Match
+
+Numeric fields:
+
+- amount
+- rate
+- period_years
+
+Tolerance:
+
+±5%
 
 ---
 
@@ -420,6 +457,7 @@ With one more week I would add:
 Loom / YouTube (Unlisted):
 
 PASTE VIDEO LINK HERE
+
 
 ---
 
