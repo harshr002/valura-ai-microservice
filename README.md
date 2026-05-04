@@ -1,4 +1,4 @@
-# Valura AI Microservice — Team Lead Assignment
+# Valura AI Microservice —  Assignment
 
 ## Overview
 
