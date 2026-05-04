@@ -8,6 +8,16 @@ def test_portfolio_health_routed():
     assert result.agent == "portfolio_health"
 
 
+def test_market_research_routed_with_ticker_followup():
+    classifier = IntentClassifier(MockLLMClient())
+    result = classifier.classify(
+        "what about Apple?",
+        [{"role": "user", "content": "Tell me about Microsoft stock"}],
+    )
+    assert result.agent == "market_research"
+    assert "AAPL" in result.entities["tickers"]
+
+
 def test_fallback_on_error():
     class BrokenLLM:
         def classify(self, q, c):
