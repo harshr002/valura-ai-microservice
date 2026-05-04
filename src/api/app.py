@@ -1,25 +1,29 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-from sse_starlette.sse import EventSourceResponse
-import json
 import asyncio
+import json
+
+from fastapi import FastAPI
+from sse_starlette.sse import EventSourceResponse
 
 from src.safety.guard import SafetyGuard, SafetyDecision
 from src.classifier.classifier import IntentClassifier
 from src.llm.mock import MockLLMClient
 from src.agents.portfolio_health.agent import PortfolioHealthAgent
+from src.memory.store import InMemorySessionStore
+
 
 app = FastAPI(title="Valura AI Microservice")
 
 safety_guard = SafetyGuard()
 classifier = IntentClassifier(MockLLMClient())
 portfolio_agent = PortfolioHealthAgent()
+memory_store = InMemorySessionStore()
 
 
 async def stream_response(payload: dict):
     """
     Streams response chunks as SSE events.
     """
+
     yield {
         "event": "metadata",
         "data": json.dumps(
@@ -31,7 +35,6 @@ async def stream_response(payload: dict):
         ),
     }
 
-    # Simulate streaming chunks
     for observation in payload.get("observations", []):
         await asyncio.sleep(0.2)
         yield {
@@ -48,12 +51,18 @@ async def stream_response(payload: dict):
 @app.post("/query")
 async def query(payload: dict):
     query_text = payload.get("query", "")
-    portfolio = payload.get("portfolio", {})
-    conversation = payload.get("conversation", [])
+    session_id = payload.get("session_id", "default")
 
-    # 1. Safety Guard (authoritative)
+    user_context = payload.get("user_context", {})
+    portfolio = user_context.get("portfolio", payload.get("portfolio", {}))
+
+    conversation = memory_store.get_history(session_id)
+    memory_store.add_turn(session_id, "user", query_text)
+
     safety = safety_guard.check(query_text)
+
     if safety["decision"] == SafetyDecision.BLOCK.value:
+
         async def blocked():
             yield {
                 "event": "error",
@@ -64,33 +73,56 @@ async def query(payload: dict):
                     }
                 ),
             }
+            yield {
+                "event": "done",
+                "data": json.dumps({"status": "blocked"}),
+            }
 
         return EventSourceResponse(blocked())
 
-    # 2. Intent Classification
     classification = classifier.classify(query_text, conversation)
 
-    # 3. Routing
     if classification.agent == "portfolio_health":
         result = portfolio_agent.run(portfolio)
+
         result["agent"] = classification.agent
         result["intent"] = classification.intent
+        result["entities"] = classification.entities
         result["safety_verdict"] = classification.safety_verdict
+
+        memory_store.add_turn(session_id, "assistant", json.dumps(result))
+
         return EventSourceResponse(stream_response(result))
 
-    # 4. Stub for unimplemented agents
     async def not_implemented():
+        response = {
+            "intent": classification.intent,
+            "agent": classification.agent,
+            "entities": classification.entities,
+            "message": "This agent is not implemented in this build.",
+        }
+
+        memory_store.add_turn(session_id, "assistant", json.dumps(response))
+
         yield {
-            "event": "message",
+            "event": "metadata",
             "data": json.dumps(
                 {
-                    "intent": classification.intent,
                     "agent": classification.agent,
-                    "entities": classification.entities,
-                    "message": "This agent is not implemented in this build.",
+                    "intent": classification.intent,
+                    "safety_verdict": classification.safety_verdict,
                 }
             ),
         }
-        yield {"event": "done", "data": "{}"}
+
+        yield {
+            "event": "message",
+            "data": json.dumps(response),
+        }
+
+        yield {
+            "event": "done",
+            "data": json.dumps({"status": "completed"}),
+        }
 
     return EventSourceResponse(not_implemented())

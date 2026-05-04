@@ -129,6 +129,17 @@ Latency was measured locally using timestamped logs:
 
 Projected cost per query at `gpt-4.1` pricing is under $0.05.
 
+
+# Fixtures
+
+This folder is intended for Valura-provided sample data:
+
+- user profiles
+- conversation transcripts
+- intent classification labels
+- safety query labels
+
+The application is designed to consume user context from request payloads and does not hardcode portfolio data, market data, or user profiles.
 ---
 
 ## Setup
