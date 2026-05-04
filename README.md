@@ -89,10 +89,13 @@ Every response includes a regulatory disclaimer.
 
 ## Cost & Performance
 
-- Development model: `gpt-4o-mini`
-- Evaluation model: `gpt-4.1`
-- Single LLM call per request
-- Deterministic safety guard avoids unnecessary LLM calls
+-• Development used a lightweight OpenAI chat model
+• Evaluation assumptions based on a GPT-4-class model
+• Architecture enforces a single LLM call per request
+• Deterministic safety guard avoids unnecessary LLM usage
+
+Projected per-query cost remains low due to strict call limits
+and pre-LLM filtering (exact cost model-dependent).
 
 Latency was measured locally using timestamped logs:
 - First-token streaming latency: ~<1s (local)
