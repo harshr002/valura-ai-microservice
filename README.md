@@ -89,6 +89,32 @@ Every response includes a regulatory disclaimer.
 
 ## Cost & Performance
 
+### Measurement Method
+
+Performance was measured locally using:
+
+```bash
+python scripts/benchmark.py
+```
+
+This benchmark sends 20 SSE requests to the `/query` endpoint and measures:
+
+- Request start → first SSE response chunk
+- Request start → final stream completion
+
+### Measured Results
+
+```text
+PASTE YOUR TERMINAL OUTPUT HERE
+```
+
+### Cost Control Strategy
+
+- Safety guard blocks unsafe queries before any LLM call
+- Only one classifier LLM call per request
+- Portfolio agent uses deterministic logic after routing
+- LLM is mocked in tests, so CI does not require `OPENAI_API_KEY`
+
 -• Development used a lightweight OpenAI chat model
 • Evaluation assumptions based on a GPT-4-class model
 • Architecture enforces a single LLM call per request
