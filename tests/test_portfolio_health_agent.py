@@ -1,4 +1,4 @@
-from backend.agents.portfolio_health.agent import PortfolioHealthAgent
+from src.agents.portfolio_health.agent import PortfolioHealthAgent
 
 
 def test_empty_portfolio_handled():

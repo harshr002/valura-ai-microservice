@@ -1,5 +1,5 @@
-from backend.classifier.classifier import IntentClassifier
-from backend.llm.mock import MockLLMClient
+from src.classifier.classifier import IntentClassifier
+from src.llm.mock import MockLLMClient
 
 
 def test_portfolio_health_routed():

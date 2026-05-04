@@ -1,4 +1,4 @@
-from backend.safety.guard import SafetyGuard, SafetyDecision
+from src.safety.guard import SafetyGuard, SafetyDecision
 
 
 def test_safe_financial_query_allowed():
