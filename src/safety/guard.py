@@ -56,7 +56,7 @@ class SafetyGuard:
         SafetyCategory.GUARANTEED_RETURNS: [
             r"\bguaranteed\s+(return|profit|income)s?\b",
             r"\brisk[- ]free\s+(profit|return)\b",
-            r"\bno\s+risk\b.*\bprofit|return\b",
+            r"\bno\s+risk\b.*\b(profit|return)\b",
             r"\b100%\s+(sure|safe|guaranteed)\b",
         ],
         SafetyCategory.MARKET_MANIPULATION: [
@@ -90,6 +90,7 @@ class SafetyGuard:
         r"\bhow\s+does\b.*\bwork\b",
         r"\bwhy\s+is\b",
         r"\blearn\b",
+        r"\brisky\b",
     ]
 
     def check(self, query: str) -> Dict[str, str]:
