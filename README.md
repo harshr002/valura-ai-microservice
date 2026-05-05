@@ -487,15 +487,14 @@ With another week I would add:
 ---
 
 # Defence Video
+YouTube link here:
 
-Paste your Loom / YouTube link here:
-
-VIDEO_LINK_HERE
+https://youtu.be/8WXqTeGL9_Q
 
 ---
 
 # Repository
 
- GitHub repository link here:
+GitHub repository link here:
 
 https://github.com/harshr002/valura-ai-microservice
