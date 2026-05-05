@@ -496,6 +496,6 @@ VIDEO_LINK_HERE
 
 # Repository
 
-Paste your GitHub repository link here:
+ GitHub repository link here:
 
 https://github.com/harshr002/valura-ai-microservice
