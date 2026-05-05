@@ -20,7 +20,7 @@ This submission implements:
 - In-memory session memory
 - CI-safe mocked LLM testing
 
----
+---₹
 
 # Architecture
 
@@ -498,4 +498,4 @@ VIDEO_LINK_HERE
 
 Paste your GitHub repository link here:
 
-REPO_LINK_HERE
+https://github.com/harshr002/valura-ai-microservice
